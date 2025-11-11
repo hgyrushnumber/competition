@@ -1,0 +1,70 @@
+id: browser_search
+name: 浏览器搜索工作流
+description: 在浏览器中打开搜索引擎并搜索关键词
+version: "1.0"
+
+variables:
+  keywords:
+    - "搜索"
+    - "浏览器"
+    - "打开"
+
+steps:
+  - id: step_1
+    name: 打开浏览器
+    description: 打开浏览器并导航到搜索引擎
+    action:
+      type: gui
+      tool: navigate
+      args:
+        url: "https://www.baidu.com"
+      description: "打开百度首页"
+    on_error: retry
+    retry_count: 2
+    timeout: 30
+
+  - id: step_2
+    name: 输入搜索关键词
+    description: 在搜索框中输入关键词
+    action:
+      type: gui
+      tool: input
+      args:
+        selector: "#kw"
+        text: "{{search_keyword}}"
+      description: "在搜索框输入关键词"
+    condition: "variables.get('search_keyword')"
+    on_error: retry
+    retry_count: 3
+    timeout: 20
+
+  - id: step_3
+    name: 点击搜索按钮
+    description: 点击搜索按钮执行搜索
+    action:
+      type: gui
+      tool: click
+      args:
+        selector: "#su"
+      description: "点击搜索按钮"
+    on_error: retry
+    retry_count: 2
+    timeout: 15
+
+  - id: step_4
+    name: 等待结果加载
+    description: 等待搜索结果页面加载完成
+    action:
+      type: gui
+      tool: wait
+      args:
+        duration: 2
+      description: "等待2秒"
+    on_error: skip
+
+on_complete: |
+  print("搜索任务完成")
+  variables['search_completed'] = True
+
+on_error: skip
+

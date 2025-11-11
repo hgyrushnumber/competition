@@ -24,7 +24,6 @@ wheels/
 *.egg
 
 # 环境变量
-.env
 
 # 数据库
 *.db

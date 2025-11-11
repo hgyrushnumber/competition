@@ -16,7 +16,10 @@ class OllamaClient:
         self,
         base_url: str = "http://localhost:11434",
         model: str = "llama3.1:latest",
-        timeout: int = 120
+        timeout: int = 120,
+        temperature: float = 0.7,
+        top_p: float = 0.9,
+        top_k: int = 40
     ):
         """
         初始化Ollama客户端
@@ -25,16 +28,25 @@ class OllamaClient:
             base_url: Ollama服务地址
             model: 模型名称
             timeout: 超时时间（秒）
+            temperature: 采样温度（0-2），越低越确定，越高越随机。默认0.7
+            top_p: Nucleus采样阈值（0-1），累积概率阈值。默认0.9
+            top_k: Top-K采样，只考虑概率最高的k个token。默认40
         """
         self.base_url = base_url
         self.model = model
         self.timeout = timeout
+        self.default_temperature = temperature
+        self.default_top_p = top_p
+        self.default_top_k = top_k
         self.client = ollama.Client(host=base_url, timeout=timeout)
     
     def chat(
         self,
         messages: List[Dict[str, str]],
         stream: bool = False,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
         **kwargs
     ) -> Any:
         """
@@ -43,11 +55,24 @@ class OllamaClient:
         Args:
             messages: 消息列表，格式：[{"role": "user", "content": "..."}]
             stream: 是否流式返回
+            temperature: 采样温度（可选，使用默认值）
+            top_p: Nucleus采样阈值（可选，使用默认值）
+            top_k: Top-K采样（可选，使用默认值）
             **kwargs: 其他参数
             
         Returns:
             响应内容
         """
+        # 使用传入的参数或默认值
+        options = {
+            "temperature": temperature if temperature is not None else self.default_temperature,
+            "top_p": top_p if top_p is not None else self.default_top_p,
+            "top_k": top_k if top_k is not None else self.default_top_k,
+        }
+        
+        # 合并到kwargs中
+        kwargs.setdefault("options", {}).update(options)
+        
         try:
             response = self.client.chat(
                 model=self.model,
@@ -68,6 +93,9 @@ class OllamaClient:
         self,
         messages: List[Dict[str, str]],
         stream: bool = False,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
         **kwargs
     ) -> Any:
         """
@@ -76,6 +104,9 @@ class OllamaClient:
         Args:
             messages: 消息列表
             stream: 是否流式返回
+            temperature: 采样温度（可选，使用默认值）
+            top_p: Nucleus采样阈值（可选，使用默认值）
+            top_k: Top-K采样（可选，使用默认值）
             **kwargs: 其他参数
             
         Returns:
@@ -85,7 +116,14 @@ class OllamaClient:
         try:
             response = await loop.run_in_executor(
                 None,
-                lambda: self.chat(messages, stream=stream, **kwargs)
+                lambda: self.chat(
+                    messages, 
+                    stream=stream, 
+                    temperature=temperature,
+                    top_p=top_p,
+                    top_k=top_k,
+                    **kwargs
+                )
             )
             return response
         except Exception as e:
@@ -96,6 +134,9 @@ class OllamaClient:
         self,
         prompt: str,
         stream: bool = False,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
         **kwargs
     ) -> str:
         """
@@ -104,18 +145,31 @@ class OllamaClient:
         Args:
             prompt: 提示词
             stream: 是否流式返回
+            temperature: 采样温度（可选，使用默认值）
+            top_p: Nucleus采样阈值（可选，使用默认值）
+            top_k: Top-K采样（可选，使用默认值）
             **kwargs: 其他参数
             
         Returns:
             生成的文本
         """
         messages = [{"role": "user", "content": prompt}]
-        return self.chat(messages, stream=stream, **kwargs)
+        return self.chat(
+            messages, 
+            stream=stream, 
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            **kwargs
+        )
     
     async def generate_async(
         self,
         prompt: str,
         stream: bool = False,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
         **kwargs
     ) -> str:
         """
@@ -124,13 +178,23 @@ class OllamaClient:
         Args:
             prompt: 提示词
             stream: 是否流式返回
+            temperature: 采样温度（可选，使用默认值）
+            top_p: Nucleus采样阈值（可选，使用默认值）
+            top_k: Top-K采样（可选，使用默认值）
             **kwargs: 其他参数
             
         Returns:
             生成的文本
         """
         messages = [{"role": "user", "content": prompt}]
-        return await self.chat_async(messages, stream=stream, **kwargs)
+        return await self.chat_async(
+            messages, 
+            stream=stream, 
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            **kwargs
+        )
     
     def stream_chat(
         self,

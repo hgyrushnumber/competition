@@ -1,0 +1,79 @@
+{
+  "id": "form_filling",
+  "name": "表单填写工作流",
+  "description": "自动填写Web表单",
+  "version": "1.0",
+  "variables": {
+    "keywords": ["表单", "填写", "提交"]
+  },
+  "steps": [
+    {
+      "id": "step_1",
+      "name": "打开表单页面",
+      "description": "导航到表单页面",
+      "action": {
+        "type": "gui",
+        "tool": "navigate",
+        "args": {
+          "url": "{{form_url}}"
+        },
+        "description": "打开表单页面"
+      },
+      "on_error": "retry",
+      "retry_count": 2,
+      "timeout": 30
+    },
+    {
+      "id": "step_2",
+      "name": "填写姓名",
+      "description": "在姓名字段输入内容",
+      "action": {
+        "type": "gui",
+        "tool": "input",
+        "args": {
+          "selector": "#name",
+          "text": "{{name}}"
+        },
+        "description": "填写姓名"
+      },
+      "condition": "variables.get('name')",
+      "on_error": "retry",
+      "retry_count": 2
+    },
+    {
+      "id": "step_3",
+      "name": "填写邮箱",
+      "description": "在邮箱字段输入内容",
+      "action": {
+        "type": "gui",
+        "tool": "input",
+        "args": {
+          "selector": "#email",
+          "text": "{{email}}"
+        },
+        "description": "填写邮箱"
+      },
+      "condition": "variables.get('email')",
+      "on_error": "retry",
+      "retry_count": 2
+    },
+    {
+      "id": "step_4",
+      "name": "提交表单",
+      "description": "点击提交按钮",
+      "action": {
+        "type": "gui",
+        "tool": "click",
+        "args": {
+          "selector": "#submit"
+        },
+        "description": "提交表单"
+      },
+      "on_error": "abort",
+      "retry_count": 1
+    }
+  ],
+  "on_complete": "print('表单填写完成')",
+  "on_error": "skip"
+}
+
